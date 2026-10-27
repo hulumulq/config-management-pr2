@@ -18,6 +18,36 @@ def version_key(value):
     return numbers, suffix is None, parts
 
 
+def _lower_matches(key, boundary, inclusive):
+    """Проверить нижнюю границу, если она задана."""
+    if not boundary:
+        return True
+    bound = version_key(boundary)
+    return key >= bound if inclusive else key > bound
+
+
+def _upper_matches(key, boundary, inclusive):
+    """Проверить верхнюю границу, если она задана."""
+    if not boundary:
+        return True
+    bound = version_key(boundary)
+    return key <= bound if inclusive else key < bound
+
+
+def _interval_matches(key, requirement):
+    """Прочитать [точную] или интервальную форму ограничения."""
+    if not requirement.endswith(("]", ")")):
+        raise ValueError("Незакрытый диапазон версии")
+    body = requirement[1:-1]
+    if "," not in body:
+        if requirement[0] != "[" or requirement[-1] != "]":
+            raise ValueError("Точная версия задаётся как [1.0.0]")
+        return key == version_key(body)
+    low, high = (p.strip() for p in body.split(",", 1))
+    return (_lower_matches(key, low, requirement[0] == "[")
+            and _upper_matches(key, high, requirement[-1] == "]"))
+
+
 def in_range(value, requirement):
     """Проверить точную, минимальную, интервальную или floating-версию."""
     if not requirement or requirement == "*":
@@ -28,23 +58,7 @@ def in_range(value, requirement):
         return value.startswith(requirement[:-1])
     key = version_key(value)
     if requirement.startswith(("[", "(")):
-        if not requirement.endswith(("]", ")")):
-            raise ValueError("Незакрытый диапазон версии")
-        body = requirement[1:-1]
-        if "," not in body:
-            if requirement[0] != "[" or requirement[-1] != "]":
-                raise ValueError("Точная версия задаётся как [1.0.0]")
-            return key == version_key(body)
-        low, high = (p.strip() for p in body.split(",", 1))
-        if low:
-            bound = version_key(low)
-            if key < bound or (key == bound and requirement[0] == "("):
-                return False
-        if high:
-            bound = version_key(high)
-            if key > bound or (key == bound and requirement[-1] == ")"):
-                return False
-        return True
+        return _interval_matches(key, requirement)
     return key >= version_key(requirement)
 
 

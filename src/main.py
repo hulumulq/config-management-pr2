@@ -2,7 +2,7 @@
 
 import sys
 
-from depsview.config import parse_args
+from depsview.config import DIRECT, GRAPH, ORDER, PARAMETERS, parse_args
 from depsview.graph import build_graph, load_order
 from depsview.repository import NuGetRepository, TestRepository
 from depsview.visualize import ascii_tree, render_svg
@@ -21,15 +21,15 @@ def run(cfg):
             NuGetRepository(cfg.repository, cfg.framework))
     root = repo.resolve(cfg.package, cfg.package_version)
     print(f"Пакет: {root}; платформа: {cfg.framework}")
-    if cfg.stage == 2:
+    if cfg.stage == DIRECT:
         for dependency in repo.dependencies(root):
             print(dependency)
         return
     graph = build_graph(repo, root, cfg.exclude, cfg.max_nodes)
-    if cfg.stage == 4:
+    if cfg.stage == ORDER:
         print("Порядок загрузки: " + " -> ".join(map(str, load_order(
             graph, root))))
-    elif cfg.stage == 3:
+    elif cfg.stage == GRAPH:
         show_graph(graph)
     else:
         render_svg(graph, cfg.output, root)
@@ -42,7 +42,7 @@ def run(cfg):
 def main(argv=None):
     """Прочитать параметры и вернуть обычный код завершения CLI."""
     cfg = parse_args(argv)
-    if cfg.stage == 1:
+    if cfg.stage == PARAMETERS:
         for key, value in vars(cfg).items():
             print(f"{key}={value}")
         return 0

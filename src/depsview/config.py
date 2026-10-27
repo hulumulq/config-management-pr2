@@ -5,8 +5,11 @@ import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from depsview.frameworks import framework_key
+
 DEFAULT_REPOSITORY = "https://api.nuget.org/v3/index.json"
 PACKAGE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\Z")
+PARAMETERS, DIRECT, GRAPH, ORDER, VISUAL = range(1, 6)
 
 
 def parser():
@@ -20,9 +23,22 @@ def parser():
     cli.add_argument("--exclude", default="", help="Исключаемая подстрока")
     cli.add_argument("--package-version", default="")
     cli.add_argument("--framework", default="net8.0")
-    cli.add_argument("--stage", type=int, choices=range(1, 6), default=5)
+    cli.add_argument("--stage", type=int, choices=range(1, 6), default=VISUAL)
     cli.add_argument("--max-nodes", type=int, default=200)
     return cli
+
+
+def check_repository(cfg, cli):
+    """Различить локальный тестовый файл и сетевой service index."""
+    if cfg.test_mode:
+        if not Path(cfg.repository).is_file():
+            cli.error("Тестовый репозиторий не найден")
+    else:
+        url = urlsplit(cfg.repository)
+        if url.scheme not in ("http", "https") or not url.hostname:
+            cli.error("Репозиторий должен быть HTTP(S) URL")
+        if url.username or url.password:
+            cli.error("URL с учётными данными не поддерживается")
 
 
 def parse_args(argv=None):
@@ -37,15 +53,9 @@ def parse_args(argv=None):
         cli.error("--output должен оканчиваться на .svg")
     if not cfg.output.parent.is_dir() or cfg.output.is_dir():
         cli.error("Папка для --output не существует или указан каталог")
-    if not cfg.framework.strip():
-        cli.error("Пустая целевая платформа --framework")
-    if cfg.test_mode:
-        if not Path(cfg.repository).is_file():
-            cli.error("Тестовый репозиторий не найден")
-    else:
-        url = urlsplit(cfg.repository)
-        if url.scheme not in ("http", "https") or not url.hostname:
-            cli.error("Репозиторий должен быть HTTP(S) URL")
-        if url.username or url.password:
-            cli.error("URL с учётными данными не поддерживается")
+    try:
+        framework_key(cfg.framework)
+    except ValueError as error:
+        cli.error(str(error))
+    check_repository(cfg, cli)
     return cfg

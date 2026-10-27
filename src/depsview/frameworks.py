@@ -38,10 +38,16 @@ def compatibility(candidate, target):
         return None
     if source == family and version <= number:
         return (3,) + version
+    return _cross_family(source, version, family, number)
+
+
+def _cross_family(source, version, family, number):
+    """Проверить поддерживаемую совместимость разных семейств TFM."""
     if family == "modern" and source == "core" and version <= (3, 1, 0):
         return (2,) + version
-    if family in ("modern", "core") and source == "standard":
-        ceiling = (2, 1, 0) if number >= (3, 0, 0) else (2, 0, 0)
-        if version <= ceiling:
-            return (1,) + version
+    if family not in ("modern", "core") or source != "standard":
+        return None
+    ceiling = (2, 1, 0) if number >= (3, 0, 0) else (2, 0, 0)
+    if version <= ceiling:
+        return (1,) + version
     return None

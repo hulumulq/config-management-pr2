@@ -13,7 +13,8 @@ def to_dot(graph, root=None):
              '  node [shape=box, style="rounded,filled",',
              '        fillcolor="#e3e9e4", fontname="Arial"];',
              '  edge [color="#64756b"];']
-    quote = lambda node: json.dumps(str(node), ensure_ascii=False)
+    names = {node: str(node) for node in graph}
+    quote = lambda node: json.dumps(names[node], ensure_ascii=False)
     for node, children in graph.items():
         style = ' [fillcolor="#ffc78c"]' if node == root else ""
         lines.append(f"  {quote(node)}{style};")

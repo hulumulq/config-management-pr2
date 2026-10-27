@@ -56,22 +56,47 @@ def dependencies_xml(data, framework):
         raise ValueError("Некорректный XML nuspec") from error
     for element in root.iter():
         element.tag = element.tag.rsplit("}", 1)[-1]
+    if root.tag != "package" or root.find("metadata") is None:
+        raise ValueError("Ответ не является документом nuspec")
     container = root.find("metadata/dependencies")
     if container is None:
         return []
     selected = list(container.findall("dependency"))
     groups = container.findall("group")
+    if groups:
+        selected += _select_group(groups, framework).findall("dependency")
+    return [(node.attrib["id"], node.get("version") or "(,)")
+            for node in selected]
+
+
+def _select_group(groups, framework):
+    """Выбрать только одну группу с максимальным рангом совместимости."""
     eligible = [(compatibility(g.get("targetFramework", ""), framework), g)
                 for g in groups]
     eligible = [(score, group) for score, group in eligible
                 if score is not None]
-    if groups and not eligible:
+    if not eligible:
         raise ValueError(f"Нет совместимой группы зависимостей: {framework}")
-    if eligible:
-        _, group = max(eligible, key=lambda item: item[0])
-        selected += group.findall("dependency")
-    return [(node.attrib["id"], node.get("version") or "(,)")
-            for node in selected]
+    return max(eligible, key=lambda item: item[0])[1]
+
+
+def _service_base(data):
+    """Проверить структуру service index и найти flat container."""
+    index = json.loads(data)
+    if not isinstance(index, dict):
+        raise ValueError("Service index должен быть JSON-объектом")
+    resources = index.get("resources")
+    if not isinstance(resources, list):
+        raise ValueError("В service index нет списка resources")
+    for resource in resources:
+        if not isinstance(resource, dict):
+            continue
+        if resource.get("@type") != "PackageBaseAddress/3.0.0":
+            continue
+        base = resource.get("@id")
+        if isinstance(base, str) and base.startswith(("http://", "https://")):
+            return base.rstrip("/")
+    raise ValueError("В service index нет PackageBaseAddress")
 
 
 class NuGetRepository:
@@ -79,13 +104,7 @@ class NuGetRepository:
 
     def __init__(self, url, framework="net8.0", fetch=read_url):
         self.fetch, self.framework = fetch, framework
-        index = json.loads(fetch(url))
-        resource = next((r for r in index.get("resources", [])
-                         if r.get("@type") == "PackageBaseAddress/3.0.0"),
-                        None)
-        if not resource:
-            raise ValueError("В service index нет PackageBaseAddress")
-        self.base = resource["@id"].rstrip("/")
+        self.base = _service_base(fetch(url))
         self.versions_cache, self.dependencies_cache = {}, {}
 
     def resolve(self, name, requirement=""):

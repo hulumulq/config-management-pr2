@@ -74,6 +74,9 @@ class ConfigTest(unittest.TestCase):
             "--package", "A", "--max-nodes", "1"
         ]).max_nodes, 1)
 
+    def test_invalid_framework(self):
+        self.rejects(["--package", "A", "--framework", "unsupported"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -117,6 +117,17 @@ class NuGetTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             repo.dependencies(repo.resolve("Root"))
 
+    def test_html_is_not_a_nuspec(self):
+        repo = self.client(spec="<html><body>Error</body></html>")
+        with self.assertRaisesRegex(ValueError, "nuspec"):
+            repo.dependencies(repo.resolve("Root"))
+
+    def test_invalid_index_structure(self):
+        for data in [b"[]", b'{"resources":["bad"]}']:
+            with self.assertRaises(ValueError):
+                NuGetRepository("https://repo/index.json",
+                                fetch=lambda url: data)
+
 
 class TestFileTest(unittest.TestCase):
     """Тестовый репозиторий задаётся явным графом из JSON."""

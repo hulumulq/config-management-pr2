@@ -49,6 +49,11 @@ class VisualizeTest(unittest.TestCase):
         text = to_dot({Package('A"B'): []})
         self.assertIn('"A\\"B";', text)
 
+    def test_case_alias_does_not_create_a_phantom_vertex(self):
+        text = to_dot({Package("A"): [Package("a")]})
+        self.assertIn('"A" -> "A";', text)
+        self.assertNotIn('"a"', text)
+
     @unittest.skipUnless(shutil.which("dot"), "Нужен Graphviz")
     def test_real_svg(self):
         graph = graph_of({"A": ["B"], "B": []})

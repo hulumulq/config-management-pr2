@@ -9,3 +9,5 @@ build/
 *.docx
 *.log
 *.nupkg
+**/obj/
+**/bin/
