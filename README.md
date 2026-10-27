@@ -41,3 +41,19 @@ make test
 Форматы: [NuGet API](https://learn.microsoft.com/en-us/nuget/api/overview),
 [flat container](https://learn.microsoft.com/en-us/nuget/api/package-base-address-resource),
 [диапазоны версий](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning).
+
+## Этап 3. Граф и нерекурсивный DFS
+
+```sh
+./run.sh --package A --test --repository examples/diamond.json --stage 3
+./run.sh --package A --test --repository examples/cycle.json --stage 3
+./run.sh --package A --test --repository examples/filter.json \
+  --exclude SKIP --stage 3
+```
+
+Стек хранит ещё не посещённые вершины. Пакет отмечается посещённым до
+обхода его детей. Поэтому цикл сохраняется на рисунке, но не зацикливает
+программу, а общая зависимость D запрашивается один раз. Рёбра направлены
+от пакета к его зависимостям. Фильтр не зависит от регистра и отсекает
+всю ветвь исключённого пакета. Отдельный тест проходит цепочку из 1100
+вершин без изменения ограничения рекурсии Python.
