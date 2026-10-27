@@ -73,3 +73,21 @@ make test
 Это порядок зависимостей, а не обещание повторить последовательность
 HTTP-запросов `dotnet restore`: NuGet использует кэш и может скачивать
 пакеты параллельно. Сравнение реальных результатов добавляется отдельно.
+
+## Этап 5. Graphviz, SVG и ASCII
+
+Нужна установленная команда `dot` из Graphviz.
+
+```sh
+./run.sh --package A --test --repository examples/diamond.json \
+  --ascii --output diamond.svg
+./run.sh --package A --test --repository examples/cycle.json \
+  --ascii --output cycle.svg
+./run.sh --package Serilog.Sinks.Console --package-version '[6.0.0]' \
+  --ascii --output serilog.svg
+```
+
+Создаются текст `.dot` и настоящее SVG-изображение. `[повтор]` обозначает
+общую зависимость, `[цикл]` — возврат в текущий путь. Наличие цикла не
+мешает рисованию, но не позволяет получить порядок загрузки на этапе 4.
+Результаты остаются локально и не попадают в Git как артефакты сборки.

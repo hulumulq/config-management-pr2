@@ -5,6 +5,7 @@ import sys
 from depsview.config import parse_args
 from depsview.graph import build_graph, load_order
 from depsview.repository import NuGetRepository, TestRepository
+from depsview.visualize import ascii_tree, render_svg
 
 
 def show_graph(graph):
@@ -28,8 +29,14 @@ def run(cfg):
     if cfg.stage == 4:
         print("Порядок загрузки: " + " -> ".join(map(str, load_order(
             graph, root))))
-    else:
+    elif cfg.stage == 3:
         show_graph(graph)
+    else:
+        render_svg(graph, cfg.output, root)
+        print(f"Graphviz: {cfg.output.with_suffix('.dot')}")
+        print(f"Изображение: {cfg.output}")
+        if cfg.ascii_tree:
+            print(ascii_tree(graph, root))
 
 
 def main(argv=None):
