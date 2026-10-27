@@ -3,7 +3,7 @@
 import sys
 
 from depsview.config import parse_args
-from depsview.graph import build_graph
+from depsview.graph import build_graph, load_order
 from depsview.repository import NuGetRepository, TestRepository
 
 
@@ -25,7 +25,11 @@ def run(cfg):
             print(dependency)
         return
     graph = build_graph(repo, root, cfg.exclude, cfg.max_nodes)
-    show_graph(graph)
+    if cfg.stage == 4:
+        print("Порядок загрузки: " + " -> ".join(map(str, load_order(
+            graph, root))))
+    else:
+        show_graph(graph)
 
 
 def main(argv=None):

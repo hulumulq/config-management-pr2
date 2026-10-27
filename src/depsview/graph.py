@@ -18,3 +18,24 @@ def build_graph(repository, root, exclude="", max_nodes=200):
         graph[node] = sorted(dict.fromkeys(children), key=str)
         stack.extend(reversed(graph[node]))
     return graph
+
+
+def load_order(graph, root):
+    """Постфиксный DFS: зависимости раньше пакета; для цикла отказ."""
+    state, order = {root: 1}, []
+    stack = [(root, iter(graph[root]))]
+    while stack:
+        node, children = stack[-1]
+        child = next(children, None)
+        if child is None:
+            state[node] = 2
+            order.append(node)
+            stack.pop()
+        elif state.get(child) == 1:
+            path = [item[0] for item in stack]
+            cycle = path[path.index(child):] + [child]
+            raise ValueError("Цикл: " + " -> ".join(map(str, cycle)))
+        elif not state.get(child):
+            state[child] = 1
+            stack.append((child, iter(graph[child])))
+    return order

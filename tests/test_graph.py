@@ -2,7 +2,7 @@
 
 import unittest
 
-from depsview.graph import build_graph
+from depsview.graph import build_graph, load_order
 from depsview.repository import Package
 
 
@@ -76,3 +76,44 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(Package("Serilog", "3.0"),
                          Package("serilog", "3.0"))
         self.assertEqual(len({Package("A"), Package("a")}), 1)
+
+
+class LoadOrderTest(unittest.TestCase):
+    """В допустимом порядке каждая зависимость предшествует пакету."""
+
+    def test_dependencies_precede_users(self):
+        repo = MemoryRepository({"A": ["B", "C"], "B": ["D"],
+                                 "C": ["D"], "D": []})
+        graph = build_graph(repo, Package("A"))
+        order = load_order(graph, Package("A"))
+        positions = {node: index for index, node in enumerate(order)}
+        for node, children in graph.items():
+            for child in children:
+                self.assertLess(positions[child], positions[node])
+        self.assertEqual(len(order), 4)
+        self.assertEqual(str(order[-1]), "A")
+
+    def test_single_node(self):
+        root = Package("A")
+        self.assertEqual(load_order({root: []}, root), [root])
+
+    def test_cycle_has_no_valid_order(self):
+        repo = MemoryRepository({"A": ["B"], "B": ["C"], "C": ["A"]})
+        graph = build_graph(repo, Package("A"))
+        with self.assertRaisesRegex(ValueError, "A -> B -> C -> A"):
+            load_order(graph, Package("A"))
+
+    def test_self_cycle_has_no_valid_order(self):
+        root = Package("A")
+        with self.assertRaisesRegex(ValueError, "Цикл"):
+            load_order({root: [root]}, root)
+
+    def test_deep_order_without_recursion(self):
+        count = 1100
+        data = {f"N{i}": [f"N{i + 1}"] for i in range(count - 1)}
+        data[f"N{count - 1}"] = []
+        root = Package("N0")
+        graph = build_graph(MemoryRepository(data), root, max_nodes=count)
+        order = load_order(graph, root)
+        self.assertEqual(str(order[0]), f"N{count - 1}")
+        self.assertEqual(len(order), count)
