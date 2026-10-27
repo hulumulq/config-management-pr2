@@ -20,3 +20,24 @@ make test
 и сообщение об ошибке. На этом этапе запросов к NuGet ещё нет.
 
 Код использует Python 3.9+ и стандартную библиотеку.
+
+## Этап 2. Прямые зависимости
+
+```sh
+./run.sh --package Serilog --package-version '[3.1.1]' --stage 2
+./run.sh --package Serilog.Sinks.Console --package-version '[6.0.0]' \
+  --stage 2
+```
+
+Программа находит `PackageBaseAddress` в service index, самостоятельно
+читает версии из JSON, загружает XML `.nuspec` и выбирает группу для
+`net8.0`. Пустая группа означает, что для этой платформы зависимостей
+нет. Группы разных платформ не смешиваются.
+
+Для зависимости с диапазоном выбирается минимальная подходящая stable
+версия; без закреплённой версии корня — последняя stable. Поддержаны
+обычные интервалы NuGet, точная версия `[1.2.3]` и `1.*`.
+
+Форматы: [NuGet API](https://learn.microsoft.com/en-us/nuget/api/overview),
+[flat container](https://learn.microsoft.com/en-us/nuget/api/package-base-address-resource),
+[диапазоны версий](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning).
