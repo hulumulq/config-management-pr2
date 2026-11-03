@@ -92,7 +92,11 @@ class NuGetTest(unittest.TestCase):
             "https://cdn/flat/shared/index.json":
                 '{"versions":["1.0.0","1.9.0","2.0.0"]}',
         }
-        fetch = lambda url: responses[url].encode("utf-8")
+
+        def fetch(url):
+            """Вернуть подставной ответ сервера."""
+            return responses[url].encode("utf-8")
+
         return NuGetRepository("https://repo/index.json", framework, fetch)
 
     def test_nearest_framework(self):

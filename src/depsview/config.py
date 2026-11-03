@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from depsview.frameworks import framework_key
 
 DEFAULT_REPOSITORY = "https://api.nuget.org/v3/index.json"
+MIN_NODES = 1
 PACKAGE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\Z")
 PARAMETERS, DIRECT, GRAPH, ORDER, VISUAL = range(1, 6)
 
@@ -47,7 +48,7 @@ def parse_args(argv=None):
     cfg = cli.parse_args(argv)
     if not PACKAGE.fullmatch(cfg.package):
         cli.error("Некорректное имя пакета")
-    if cfg.max_nodes < 1:
+    if cfg.max_nodes < MIN_NODES:
         cli.error("--max-nodes должен быть положительным")
     if cfg.output.suffix.lower() != ".svg":
         cli.error("--output должен оканчиваться на .svg")

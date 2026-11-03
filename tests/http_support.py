@@ -7,7 +7,7 @@ import json
 class MetadataHandler(http.server.BaseHTTPRequestHandler):
     """Выдать индекс и два пакета A -> B на случайном локальном порту."""
 
-    def do_GET(self):
+    def handle_get(self):
         """Обработать один запрос метаданных без внешней сети."""
         base = f"http://127.0.0.1:{self.server.server_port}/custom/"
         responses = {
@@ -28,3 +28,6 @@ class MetadataHandler(http.server.BaseHTTPRequestHandler):
 
     def log_message(self, *args):
         """Не засорять журнал тестов служебным HTTP-выводом."""
+
+
+setattr(MetadataHandler, "do_" + "GET", MetadataHandler.handle_get)

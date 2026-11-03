@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-import xml.etree.ElementTree as ET
+from xml.etree import ElementTree
 from pathlib import Path
 from unittest.mock import patch
 
@@ -67,7 +67,7 @@ class VisualizeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "graph.svg"
             render_svg(graph, path, Package("A"))
-            root = ET.fromstring(path.read_text())
+            root = ElementTree.fromstring(path.read_text())
             self.assertTrue(root.tag.endswith("svg"))
             text = " ".join(root.itertext())
             self.assertIn("A", text)

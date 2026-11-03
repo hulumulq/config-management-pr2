@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-import xml.etree.ElementTree as ET
+from xml.etree import ElementTree
 from pathlib import Path
 
 
@@ -14,7 +14,11 @@ def to_dot(graph, root=None):
              '        fillcolor="#e3e9e4", fontname="Arial"];',
              '  edge [color="#64756b"];']
     names = {node: str(node) for node in graph}
-    quote = lambda node: json.dumps(names[node], ensure_ascii=False)
+
+    def quote(node):
+        """Взять имя вершины в кавычках DOT."""
+        return json.dumps(names[node], ensure_ascii=False)
+
     for node, children in graph.items():
         style = ' [fillcolor="#ffc78c"]' if node == root else ""
         lines.append(f"  {quote(node)}{style};")
@@ -23,25 +27,36 @@ def to_dot(graph, root=None):
     return "\n".join(lines + ["}", ""])
 
 
+def _child_frames(children, prefix, path):
+    """Подготовить детей вершины к обходу стеком в исходном порядке."""
+    last_index = len(children) - 1
+    return [(child, prefix, index == last_index, path)
+            for index, child in reversed(list(enumerate(children)))]
+
+
+def _mark(node, path, expanded):
+    """Отметить возврат в текущий путь или уже показанную вершину."""
+    if node in path:
+        return " [цикл]"
+    if node in expanded:
+        return " [повтор]"
+    return ""
+
+
 def ascii_tree(graph, root):
     """Отличить цикл в текущем пути от общей повторной зависимости."""
     lines, expanded = [str(root)], {root}
-    stack = [(node, "", index == len(graph[root]) - 1, frozenset([root]))
-             for index, node in reversed(list(enumerate(graph[root])))]
+    stack = _child_frames(graph[root], "", frozenset([root]))
     while stack:
         node, prefix, last, path = stack.pop()
-        cycle, repeated = node in path, node in expanded
-        mark = " [цикл]" if cycle else " [повтор]" if repeated else ""
+        mark = _mark(node, path, expanded)
         lines.append(prefix + ("`-- " if last else "|-- ") + str(node)
                      + mark)
-        if cycle or repeated:
+        if mark:
             continue
         expanded.add(node)
         branch = prefix + ("    " if last else "|   ")
-        children = graph[node]
-        stack.extend((child, branch, index == len(children) - 1,
-                      path | {node}) for index, child in
-                     reversed(list(enumerate(children))))
+        stack.extend(_child_frames(graph[node], branch, path | {node}))
     return "\n".join(lines)
 
 
@@ -57,8 +72,8 @@ def render_svg(graph, output, root=None):
     except (subprocess.SubprocessError, OSError) as error:
         raise ValueError(f"Graphviz не построил SVG: {error}") from error
     try:
-        svg = ET.fromstring(response.stdout)
-    except ET.ParseError as error:
+        svg = ElementTree.fromstring(response.stdout)
+    except ElementTree.ParseError as error:
         raise ValueError("Graphviz вернул некорректный SVG") from error
     if not svg.tag.endswith("svg"):
         raise ValueError("Graphviz вернул другой формат вместо SVG")

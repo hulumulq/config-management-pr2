@@ -4,7 +4,7 @@ import json
 import re
 import urllib.error
 import urllib.request
-import xml.etree.ElementTree as ET
+from xml.etree import ElementTree
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -54,8 +54,8 @@ def read_url(url):
 def dependencies_xml(data, framework):
     """Прочитать XML и выбрать одну ближайшую совместимую TFM-группу."""
     try:
-        root = ET.fromstring(data)
-    except ET.ParseError as error:
+        root = ElementTree.fromstring(data)
+    except ElementTree.ParseError as error:
         raise ValueError("Некорректный XML nuspec") from error
     for element in root.iter():
         element.tag = element.tag.rsplit("}", 1)[-1]
