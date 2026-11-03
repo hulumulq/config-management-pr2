@@ -26,12 +26,14 @@ class CliTest(unittest.TestCase):
     """Проверки кодов выхода и конечного результата без сети NuGet."""
 
     def test_parameters_do_not_fetch_network(self):
+        """На первом этапе параметры выводятся без обращения к сети."""
         result = run_cli("--package", "A", "--repository",
                          "http://127.0.0.1:1/index.json", "--stage", "1")
         self.assertEqual(result.returncode, 0)
         self.assertIn("package=A", result.stdout)
 
     def test_cycle_order_fails_clearly(self):
+        """Для цикла сообщается, что порядка загрузки нет."""
         result = run_cli("--package", "A", "--test", "--repository",
                          "examples/cycle.json", "--stage", "4")
         self.assertEqual(result.returncode, 1)
@@ -39,11 +41,13 @@ class CliTest(unittest.TestCase):
         self.assertNotIn("Traceback", result.stderr)
 
     def test_missing_file_fails_before_work(self):
+        """Отсутствующий файл репозитория даёт понятную ошибку."""
         result = run_cli("--package", "A", "--test", "--repository",
                          "/missing/repository.json")
         self.assertEqual(result.returncode, 2)
 
     def test_malformed_json_is_not_traceback(self):
+        """Битый JSON даёт сообщение об ошибке, а не трассировку."""
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "broken.json"
             path.write_text("not JSON")

@@ -22,12 +22,15 @@ class Package:
     version: str = ""
 
     def __str__(self):
+        """Вернуть имя пакета с версией через @."""
         return self.name + ("@" + self.version if self.version else "")
 
     def __hash__(self):
+        """Хешировать имя и версию без учёта регистра."""
         return hash((self.name.lower(), self.version.lower()))
 
     def __eq__(self, other):
+        """Сравнить пакеты по имени и версии без учёта регистра."""
         return (isinstance(other, Package)
                 and self.name.lower() == other.name.lower()
                 and self.version.lower() == other.version.lower())
@@ -103,6 +106,7 @@ class NuGetRepository:
     """Динамически найти PackageBaseAddress, затем читать .nuspec."""
 
     def __init__(self, url, framework="net8.0", fetch=read_url):
+        """Запомнить адрес источника NuGet и целевую платформу."""
         self.fetch, self.framework = fetch, framework
         self.base = _service_base(fetch(url))
         self.versions_cache, self.dependencies_cache = {}, {}
@@ -132,6 +136,7 @@ class TestRepository:
     """Граф {A: [B, C], B: [], C: []}; циклы допускаются."""
 
     def __init__(self, path):
+        """Прочитать JSON-описание тестового репозитория."""
         self.data = json.loads(Path(path).read_text(encoding="utf-8"))
         if not isinstance(self.data, dict) or not self.data:
             raise ValueError("Тестовый граф должен быть непустым объектом")

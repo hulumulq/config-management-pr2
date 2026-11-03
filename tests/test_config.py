@@ -75,6 +75,7 @@ class ConfigTest(unittest.TestCase):
         ]).max_nodes, 1)
 
     def test_invalid_framework(self):
+        """Неизвестная целевая платформа отклоняется."""
         self.rejects(["--package", "A", "--framework", "unsupported"])
 
 
